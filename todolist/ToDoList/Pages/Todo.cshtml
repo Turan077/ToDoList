@@ -1,0 +1,105 @@
+@page
+@using ToDoList.Models
+@model ToDoList.Pages.TodoModel
+@{
+    ViewData["Title"] = "Todo List";
+    var kategoriListesi = new[] { "İş", "Kişisel", "Alışveriş", "Okul", "Diğer" };
+}
+
+<div class="container mt-4">
+    <h1 class="mb-4">Todo List</h1>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="post">
+                <input type="hidden" asp-for="EditTodo.Id" />
+                <div class="mb-3">
+                    <label asp-for="EditTodo.Title" class="form-label">Başlık</label>
+                    <input asp-for="EditTodo.Title" class="form-control" />
+                    <span asp-validation-for="EditTodo.Title" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="EditTodo.Description" class="form-label">Açıklama</label>
+                    <textarea asp-for="EditTodo.Description" class="form-control"></textarea>
+                    <span asp-validation-for="EditTodo.Description" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="EditTodo.Category" class="form-label">Kategori</label>
+                    <select asp-for="EditTodo.Category" class="form-select">
+                        <option value="">Seçiniz</option>
+                        @foreach (var kategori in kategoriListesi)
+                        {
+                            if (Model.EditTodo?.Category == kategori)
+                            {
+                                <option value="@kategori" selected>@kategori</option>
+                            }
+                            else
+                            {
+                                <option value="@kategori">@kategori</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="EditTodo.DueDate" class="form-label">Son Teslim Tarihi</label>
+                    <input asp-for="EditTodo.DueDate" type="date" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label asp-for="EditTodo.Priority" class="form-label">Öncelik</label>
+                    <select asp-for="EditTodo.Priority" class="form-select" asp-items="Html.GetEnumSelectList<Priority>()"></select>
+                </div>
+                <button type="submit" class="btn btn-primary">@((Model.EditTodo != null && Model.EditTodo.Id > 0) ? "Güncelle" : "Ekle")</button>
+                @if (Model.EditTodo != null && Model.EditTodo.Id > 0)
+                {
+                    <a asp-page-handler="CancelEdit" class="btn btn-secondary ms-2">İptal</a>
+                }
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        @foreach (var todo in Model.Todos)
+        {
+            var kartRenk = todo.Priority == Priority.High ? "border-danger shadow bg-danger bg-opacity-10" : todo.Priority == Priority.Medium ? "border-warning" : "border-info";
+            <div class="col-md-4 mb-3">
+                <div class="card h-100 border-2 @kartRenk @(todo.IsCompleted ? "bg-light" : "")">
+                    <div class="card-body">
+                        <h5 class="card-title">@todo.Title</h5>
+                        <p class="card-text">@todo.Description</p>
+                        <div class="mb-2">
+                            <span class="badge bg-secondary me-1">@todo.Category</span>
+                            @if (todo.DueDate != null)
+                            {
+                                <span class="badge bg-dark me-1">@todo.DueDate.Value.ToString("dd.MM.yyyy")</span>
+                            }
+                            <span class="badge @(todo.Priority switch {
+                                Priority.High => "bg-danger text-white fw-bold",
+                                Priority.Medium => "bg-warning text-dark",
+                                _ => "bg-info text-dark"
+                            })">@todo.Priority</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <form method="post" asp-page-handler="ToggleComplete" asp-route-id="@todo.Id" class="d-inline">
+                                    <button type="submit" class="btn btn-sm @(todo.IsCompleted ? "btn-secondary" : "btn-success")">
+                                        @(todo.IsCompleted ? "Tamamlandı" : "Tamamla")
+                                    </button>
+                                </form>
+                                <form method="post" asp-page-handler="Edit" asp-route-id="@todo.Id" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-warning">Düzenle</button>
+                                </form>
+                                <form method="post" asp-page-handler="Delete" asp-route-id="@todo.Id" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Silmek istediğinize emin misiniz?')">Sil</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+} 
